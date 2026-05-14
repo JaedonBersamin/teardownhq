@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Large 3D models — keep locally (see public/models/README.md). Use Git LFS if you need them in Git.
+public/models/*.glb
+iphone-viewer/public/*.glb
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
