@@ -1,5 +1,6 @@
 import type { PartId } from '../data/deviceConfig'
 import { parts } from '../data/deviceConfig'
+import { IPHONE12_GLB_FILENAME, IPHONE12_GLB_URL } from '../constants/model'
 
 type Props = {
   selectedPartId: PartId | null
@@ -88,8 +89,18 @@ export function InfoPanel({
 
       <footer className="info-panel__footer">
         <p className="info-panel__muted">
-          Model: <code>iphone_12_teardown.glb</code> (CC-BY-4.0, Sketchfab — keep attribution in
-          shipping app). Credit in README.
+          Model: <code>{IPHONE12_GLB_FILENAME}</code> (CC-BY-4.0, Sketchfab — keep attribution in
+          shipping app).
+        </p>
+        <p className="info-panel__section" style={{ marginTop: '0.5rem' }}>
+          <a className="info-panel__download" href={IPHONE12_GLB_URL} download={IPHONE12_GLB_FILENAME}>
+            Download GLB
+          </a>
+          <span className="info-panel__muted"> — on another device, open this app via the Network URL from the terminal, then use this link (or </span>
+          <a className="info-panel__download" href={IPHONE12_GLB_URL}>
+            open file directly
+          </a>
+          <span className="info-panel__muted">).</span>
         </p>
       </footer>
     </aside>

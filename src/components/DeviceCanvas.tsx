@@ -3,6 +3,7 @@ import { Environment, Html, OrbitControls } from '@react-three/drei'
 import { Suspense } from 'react'
 import type { PartId } from '../data/deviceConfig'
 import { IPhone12Model } from './IPhone12Model'
+import { RepairBench } from './RepairBench'
 
 type Props = {
   selectedPartId: PartId | null
@@ -36,12 +37,25 @@ function Scene({ selectedPartId, onSelectPart }: SceneProps) {
   return (
     <>
       <color attach="background" args={['#e8ebe3']} />
-      <ambientLight intensity={0.65} />
-      <directionalLight position={[4, 8, 4]} intensity={1.15} castShadow />
-      <OrbitControls makeDefault minDistance={1.2} maxDistance={14} enableDamping dampingFactor={0.08} />
+      <ambientLight intensity={0.85} />
+      <directionalLight
+        position={[6, 14, 5]}
+        intensity={1.45}
+        castShadow
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-far={28}
+        shadow-camera-left={-7}
+        shadow-camera-right={7}
+        shadow-camera-top={7}
+        shadow-camera-bottom={-7}
+        shadow-bias={-0.0002}
+      />
+      <directionalLight position={[-8, 6, -6]} intensity={0.55} />
+      <RepairBench />
+      <OrbitControls makeDefault minDistance={0.5} maxDistance={50} enableDamping dampingFactor={0.08} />
       {/* Separate Suspense: HDR fetch must not block the GLB from mounting */}
       <Suspense fallback={null}>
-        <Environment preset="city" />
+        <Environment preset="sunset" background={false} />
       </Suspense>
       <Suspense fallback={<ModelLoading />}>
         <IPhone12Model selectedPartId={selectedPartId} onSelectPart={onSelectPart} />
@@ -56,7 +70,7 @@ export function DeviceCanvas(props: Props) {
       <Canvas
         shadows
         style={{ width: '100%', height: '100%', display: 'block' }}
-        camera={{ position: [2.2, 1.4, 2.8], fov: 45 }}
+        camera={{ position: [0, 6, 10], fov: 45, near: 0.05, far: 5000 }}
         gl={{ antialias: true }}
       >
         <Scene selectedPartId={props.selectedPartId} onSelectPart={props.onSelectPart} />

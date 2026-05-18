@@ -4,41 +4,16 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import type { PartId } from '../data/deviceConfig'
 import { IPHONE12_GLB_URL } from '../constants/model'
-import { resolvePartIdFromObject } from '../lib/iphone12PartResolve'
+import { fitCameraToObject } from '../lib/fitCameraToObject'
+import {
+  buildAssemblyFromScene,
+  setAssemblyHighlight,
+} from '../lib/iphone12Assembly'
+import { mountAssemblyOnBench } from '../lib/mountOnBench'
 
 type Props = {
   selectedPartId: PartId | null
   onSelectPart: (id: PartId) => void
-}
-
-const HIGHLIGHT = new THREE.Color('#639922')
-
-function cloneMaterialForMesh(m: THREE.Material): THREE.Material {
-  const c = m.clone()
-  if (
-    c instanceof THREE.MeshStandardMaterial ||
-    c instanceof THREE.MeshPhysicalMaterial ||
-    c instanceof THREE.MeshLambertMaterial ||
-    c instanceof THREE.MeshPhongMaterial
-  ) {
-    c.emissive = c.emissive.clone()
-  }
-  return c
-}
-
-function supportsEmissive(
-  mat: THREE.Material,
-): mat is
-  | THREE.MeshStandardMaterial
-  | THREE.MeshPhysicalMaterial
-  | THREE.MeshLambertMaterial
-  | THREE.MeshPhongMaterial {
-  return (
-    mat instanceof THREE.MeshStandardMaterial ||
-    mat instanceof THREE.MeshPhysicalMaterial ||
-    mat instanceof THREE.MeshLambertMaterial ||
-    mat instanceof THREE.MeshPhongMaterial
-  )
 }
 
 export function IPhone12Model({ selectedPartId, onSelectPart }: Props) {
@@ -46,84 +21,30 @@ export function IPhone12Model({ selectedPartId, onSelectPart }: Props) {
   const { camera, invalidate } = useThree()
   const get = useThree((s) => s.get)
 
-  const root = useMemo(() => {
-    const g = gltf.scene.clone(true)
-    g.traverse((obj) => {
-      if (!(obj instanceof THREE.Mesh)) return
-      const partId = resolvePartIdFromObject(obj)
-      obj.userData.partId = partId
-      const mats = Array.isArray(obj.material) ? obj.material : [obj.material]
-      obj.material = mats.map((mat) => cloneMaterialForMesh(mat))
-      obj.castShadow = true
-      obj.receiveShadow = true
-      obj.frustumCulled = false
-      const matList = Array.isArray(obj.material) ? obj.material : [obj.material]
-      for (const mat of matList) {
-        if ('side' in mat && mat.side !== undefined) {
-          mat.side = THREE.DoubleSide
-        }
-      }
-    })
-    g.updateMatrixWorld(true)
-    const box = new THREE.Box3().setFromObject(g)
-    if (!box.isEmpty()) {
-      const center = box.getCenter(new THREE.Vector3())
-      g.position.sub(center)
-      const size = box.getSize(new THREE.Vector3())
-      const maxDim = Math.max(size.x, size.y, size.z, 1e-6)
-      const target = 2.2
-      g.scale.setScalar(target / maxDim)
-    }
-    return g
-  }, [gltf])
+  const root = useMemo(
+    () => mountAssemblyOnBench(buildAssemblyFromScene(gltf.scene)),
+    [gltf],
+  )
 
-  /** After load, move camera to the model — default camera often misses scaled GLB bounds */
   useEffect(() => {
-    const id = requestAnimationFrame(() => {
-      root.updateMatrixWorld(true)
-      const box = new THREE.Box3().setFromObject(root)
-      if (box.isEmpty()) {
+    let id2 = 0
+    let cancelled = false
+    const id1 = requestAnimationFrame(() => {
+      id2 = requestAnimationFrame(() => {
+        if (cancelled) return
+        fitCameraToObject(camera, root, get().controls as never)
         invalidate()
-        return
-      }
-      const sphere = new THREE.Sphere()
-      box.getBoundingSphere(sphere)
-      const c = sphere.center
-      const rad = Math.max(sphere.radius, 0.05)
-      const dist = rad * 3.4
-      camera.position.set(c.x + dist * 0.75, c.y + dist * 0.45, c.z + dist * 0.9)
-      camera.near = Math.max(0.001, rad / 300)
-      camera.far = Math.max(500, rad * 120)
-      if (camera instanceof THREE.PerspectiveCamera) {
-        camera.updateProjectionMatrix()
-      }
-      camera.lookAt(c)
-
-      const controls = get().controls as
-        | { target: THREE.Vector3; update?: () => void }
-        | null
-        | undefined
-      if (controls?.target) {
-        controls.target.copy(c)
-        controls.update?.()
-      }
-      invalidate()
+      })
     })
-    return () => cancelAnimationFrame(id)
+    return () => {
+      cancelled = true
+      cancelAnimationFrame(id1)
+      cancelAnimationFrame(id2)
+    }
   }, [root, camera, get, invalidate])
 
   useLayoutEffect(() => {
-    root.traverse((obj) => {
-      if (!(obj instanceof THREE.Mesh)) return
-      const pid = obj.userData.partId as PartId | null | undefined
-      const mats = Array.isArray(obj.material) ? obj.material : [obj.material]
-      for (const mat of mats) {
-        if (!supportsEmissive(mat)) continue
-        const on = Boolean(pid && selectedPartId && pid === selectedPartId)
-        mat.emissive.copy(on ? HIGHLIGHT : new THREE.Color(0x000000))
-        mat.emissiveIntensity = on ? 0.22 : 0
-      }
-    })
+    setAssemblyHighlight(root, selectedPartId)
   }, [root, selectedPartId])
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {

@@ -24,6 +24,7 @@
   height: 100%;
   min-width: 0;
   position: relative;
+  background: linear-gradient(180deg, #e8ebe3 0%, #d8e0d4 55%, #cdd5c8 100%);
 }
 
 .device-canvas canvas {
@@ -142,8 +143,14 @@
   line-height: 1.45;
 }
 
-.info-panel__list a {
+.info-panel__list a,
+.info-panel__download {
   color: var(--primary);
+  font-weight: 500;
+}
+
+.info-panel__download:hover {
+  text-decoration: underline;
 }
 
 .info-panel__muted {
