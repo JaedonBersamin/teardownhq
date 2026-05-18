@@ -15,6 +15,16 @@ dist-ssr
 # Large 3D models — keep locally (see public/models/README.md). Use Git LFS if you need them in Git.
 public/models/*.glb
 iphone-viewer/public/*.glb
+# Blender / export drops at repo root (copy into public/models/ for the app)
+/*.glb
+
+# Env and secrets (if you add Supabase keys etc. later)
+.env
+.env.local
+.env.*.local
+
+# Blender crash / backup saves next to the .blend file
+*.blend1
 
 # Editor directories and files
 .vscode/*
