@@ -112,20 +112,37 @@ export function supportsEmissive(
 }
 
 export const ASSEMBLY_HIGHLIGHT = new THREE.Color('#639922')
+export const ASSEMBLY_BLOCKING = new THREE.Color('#e85d04')
 
 export function setAssemblyHighlight(
   root: THREE.Object3D,
   selectedPartId: PartId | null,
+  blockingPartIds: Set<PartId> = new Set(),
 ) {
   root.traverse((obj) => {
     if (!(obj instanceof THREE.Mesh)) return
     const pid = obj.userData.partId as PartId | null | undefined
+    const isSelected = Boolean(pid && selectedPartId && pid === selectedPartId)
+    const isBlocking = Boolean(pid && blockingPartIds.has(pid))
+
+    // x-ray: blocking parts render on top of everything else
+    obj.renderOrder = isBlocking ? 999 : 0
+
     const mats = Array.isArray(obj.material) ? obj.material : [obj.material]
     for (const mat of mats) {
+      mat.depthTest = !isBlocking
+
       if (!supportsEmissive(mat)) continue
-      const on = Boolean(pid && selectedPartId && pid === selectedPartId)
-      mat.emissive.copy(on ? ASSEMBLY_HIGHLIGHT : new THREE.Color(0x000000))
-      mat.emissiveIntensity = on ? 0.22 : 0
+      if (isSelected) {
+        mat.emissive.copy(ASSEMBLY_HIGHLIGHT)
+        mat.emissiveIntensity = 0.22
+      } else if (isBlocking) {
+        mat.emissive.copy(ASSEMBLY_BLOCKING)
+        mat.emissiveIntensity = 0.5
+      } else {
+        mat.emissive.set(0x000000)
+        mat.emissiveIntensity = 0
+      }
     }
   })
 }

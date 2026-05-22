@@ -16,9 +16,10 @@ type Props = {
   onSelectPart: (id: PartId) => void
   removedParts: Set<PartId>
   onAttemptRemove: (id: PartId) => boolean
+  blockingPartIds: Set<PartId>
 }
 
-export function IPhone12Model({ selectedPartId, onSelectPart, removedParts, onAttemptRemove }: Props) {
+export function IPhone12Model({ selectedPartId, onSelectPart, removedParts, onAttemptRemove, blockingPartIds }: Props) {
   const gltf = useLoader(GLTFLoader, IPHONE12_GLB_URL)
   const { camera, invalidate } = useThree()
   const get = useThree((s) => s.get)
@@ -46,8 +47,8 @@ export function IPhone12Model({ selectedPartId, onSelectPart, removedParts, onAt
   }, [root, camera, get, invalidate])
 
   useLayoutEffect(() => {
-    setAssemblyHighlight(root, selectedPartId)
-  }, [root, selectedPartId])
+    setAssemblyHighlight(root, selectedPartId, blockingPartIds)
+  }, [root, selectedPartId, blockingPartIds])
 
   const handlePointerOver = (e: ThreeEvent<PointerEvent>) => {
     let o: THREE.Object3D | null = e.object
@@ -84,9 +85,9 @@ export function IPhone12Model({ selectedPartId, onSelectPart, removedParts, onAt
         const home = group.userData.homePos as THREE.Vector3
         if (!home) continue
         const targetY = home.y + (removed ? 2 : 0)
-        group.position.x = THREE.MathUtils.lerp(group.position.x, home.x, 0.12)
-        group.position.y = THREE.MathUtils.lerp(group.position.y, targetY, 0.12)
-        group.position.z = THREE.MathUtils.lerp(group.position.z, home.z, 0.12)
+        group.position.x = THREE.MathUtils.lerp(group.position.x, home.x, 0.03)
+        group.position.y = THREE.MathUtils.lerp(group.position.y, targetY, 0.03)
+        group.position.z = THREE.MathUtils.lerp(group.position.z, home.z, 0.03)
       }
     })
   })
@@ -105,9 +106,22 @@ export function IPhone12Model({ selectedPartId, onSelectPart, removedParts, onAt
     }
   }
 
+  const handleContextMenu = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation()
+    e.nativeEvent.preventDefault()
+    let o: THREE.Object3D | null = e.object
+    while (o) {
+      const pid = o.userData.partId as PartId | null | undefined
+      if (pid) {
+        onSelectPart(pid)
+        return
+      }
+      o = o.parent
+    }
+  }
 
   return (
-    <group onClick={handleClick} onPointerOver={handlePointerOver} onPointerOut={handlePointerOut}>
+    <group onClick={handleClick} onContextMenu={handleContextMenu} onPointerOver={handlePointerOver} onPointerOut={handlePointerOut}>
       <primitive object={root} dispose={null} />
     </group>
   )

@@ -11,9 +11,10 @@ type Props = {
   onSelectPart: (id: PartId) => void
   removedParts: Set<PartId>
   onAttemptRemove: (id: PartId) => boolean
+  blockingPartIds: Set<PartId>
 }
 
-type SceneProps = Pick<Props, 'selectedPartId' | 'onSelectPart' | 'removedParts' | 'onAttemptRemove'>
+type SceneProps = Pick<Props, 'selectedPartId' | 'onSelectPart' | 'removedParts' | 'onAttemptRemove' | 'blockingPartIds'>
 
 function ModelLoading() {
   return (
@@ -35,10 +36,10 @@ function ModelLoading() {
   )
 }
 
-function Scene({ selectedPartId, onSelectPart, removedParts, onAttemptRemove }: SceneProps) {
+function Scene({ selectedPartId, onSelectPart, removedParts, onAttemptRemove, blockingPartIds }: SceneProps) {
   return (
     <>
-      <color attach="background" args={['#e8ebe3']} />
+      <color attach="background" args={['#1a1a1a']} />
       <ambientLight intensity={0.85} />
       <directionalLight
         position={[6, 14, 5]}
@@ -60,11 +61,12 @@ function Scene({ selectedPartId, onSelectPart, removedParts, onAttemptRemove }: 
         <Environment preset="sunset" background={false} />
       </Suspense>
       <Suspense fallback={<ModelLoading />}>
-        <IPhone12Model 
-          selectedPartId={selectedPartId} 
-          onSelectPart={onSelectPart} 
+        <IPhone12Model
+          selectedPartId={selectedPartId}
+          onSelectPart={onSelectPart}
           removedParts={removedParts}
-          onAttemptRemove={onAttemptRemove}    
+          onAttemptRemove={onAttemptRemove}
+          blockingPartIds={blockingPartIds}
         />
       </Suspense>
     </>
@@ -80,11 +82,12 @@ export function DeviceCanvas(props: Props) {
         camera={{ position: [0, 6, 10], fov: 45, near: 0.05, far: 5000 }}
         gl={{ antialias: true }}
       >
-        <Scene     
+        <Scene
           selectedPartId={props.selectedPartId}
           onSelectPart={props.onSelectPart}
           removedParts={props.removedParts}
           onAttemptRemove={props.onAttemptRemove}
+          blockingPartIds={props.blockingPartIds}
         />
       </Canvas>
     </div>
