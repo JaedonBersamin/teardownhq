@@ -13,5 +13,5 @@ export const BENCH_SURFACE_COLOR = '#b8c4b0'
 export const BENCH_SURFACE_Y = 0
 
 /** Blender part groups used to find which way is “back” */
-export const BENCH_BACK_PART_GROUPS = ['PART_BackCover', 'PART_Backplate'] as const
-export const BENCH_DISPLAY_PART_GROUP = 'PART_Display'
+export const BENCH_BACK_PART_GROUPS = ['back_cover', 'backplate'] as const
+export const BENCH_DISPLAY_PART_GROUP = 'front_panel'
